@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { readJson, getRandom, getRandomInt } = require('./common');
+const { readJson, getRandom, getRandomInt } = require('../common');
 
 const Path = require('path');
 

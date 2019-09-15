@@ -3,157 +3,246 @@
 const assert = require('assert');
 
 class Sensors {
+    constructor() {
+         this.sensorTypeMap = new Map();
+         this.sensorMap = new Map();
+         this.sensorDataArray = [];
+        //@TODO
+    }
 
-  constructor() {
-    //@TODO
-  }
+    /** Clear out all DATA from this object. */
+    async clear() {
+        this.sensorTypeMap.clear();
+        this.sensorMap.clear();
+        this.sensorDataArray.length = 0;
+        //@TODO
+    }
 
-  /** Clear out all data from this object. */
-  async clear() {
-    //@TODO
-  }
+    /** Subject to field validation as per FN_INFOS.addSensorType,
+     *  add sensor-type specified by info to this.  Replace any
+     *  earlier information for a sensor-type with the same id.
+     *
+     *  All user errors must be thrown as an array of objects.
+     */
+    async addSensorType(info) {
+        const sensorType = validate('addSensorType', info);
+        this.sensorTypeMap.set(sensorType.id,sensorType);
+        //@TODO
+    }
 
-  /** Subject to field validation as per FN_INFOS.addSensorType,
-   *  add sensor-type specified by info to this.  Replace any
-   *  earlier information for a sensor-type with the same id.
-   *
-   *  All user errors must be thrown as an array of objects.
-   */
-  async addSensorType(info) {
-    const sensorType = validate('addSensorType', info);
-    //@TODO
-  }
-  
-  /** Subject to field validation as per FN_INFOS.addSensor, add
-   *  sensor specified by info to this.  Replace any earlier
-   *  information for a sensor with the same id.
-   *
-   *  All user errors must be thrown as an array of objects.
-   */
-  async addSensor(info) {
-    const sensor = validate('addSensor', info);
-    //@TODO
-  }
+    /** Subject to field validation as per FN_INFOS.addSensor, add
+     *  sensor specified by info to this.  Replace any earlier
+     *  information for a sensor with the same id.
+     *
+     *  All user errors must be thrown as an array of objects.
+     */
+    async addSensor(info) {
+        const sensor = validate('addSensor', info);
+        this.sensorMap.set(sensor.id,sensor);
+        //@TODO
+    }
 
-  /** Subject to field validation as per FN_INFOS.addSensorData, add
-   *  reading given by info for sensor specified by info.sensorId to
-   *  this. Replace any earlier reading having the same timestamp for
-   *  the same sensor.
-   *
-   *  All user errors must be thrown as an array of objects.
-   */
-  async addSensorData(info) {
-    const sensorData = validate('addSensorData', info);
-    //@TODO
-  }
+    /** Subject to field validation as per FN_INFOS.addSensorData, add
+     *  reading given by info for sensor specified by info.sensorId to
+     *  this. Replace any earlier reading having the same timestamp for
+     *  the same sensor.
+     *
+     *  All user errors must be thrown as an array of objects.
+     */
+    async addSensorData(info) {
+        const sensorData = validate('addSensorData', info);
+        let sensorObj = this.sensorMap.get(sensorData.sensorId);
+        let sensorTypeObj =  this.sensorTypeMap.get(sensorObj.model);
 
-  /** Subject to validation of search-parameters in info as per
-   *  FN_INFOS.findSensorTypes, return all sensor-types which
-   *  satisfy search specifications in info.  Note that the
-   *  search-specs can filter the results by any of the primitive
-   *  properties of sensor types.  
-   *
-   *  The returned value should be an object containing a data
-   *  property which is a list of sensor-types previously added using
-   *  addSensorType().  The list should be sorted in ascending order
-   *  by id.
-   *
-   *  The returned object will contain a lastIndex property.  If its
-   *  value is non-negative, then that value can be specified as the
-   *  index property for the next search.  Note that the index (when 
-   *  set to the lastIndex) and count search-spec parameters can be used
-   *  in successive calls to allow scrolling through the collection of
-   *  all sensor-types which meet some filter criteria.
-   *
-   *
-   *  All user errors must be thrown as an array of objects.
-   */
-  async findSensorTypes(info) {
-    const searchSpecs = validate('findSensorTypes', info);
-    //@TODO
-    return {};
-  }
-  
-  /** Subject to validation of search-parameters in info as per
-   *  FN_INFOS.findSensors, return all sensors which
-   *  satisfy search specifications in info.  Note that the
-   *  search-specs can filter the results by any of the primitive
-   *  properties of a sensor.  
-   *
-   *  The returned value should be an object containing a data
-   *  property which is a list of all sensors satisfying the
-   *  search-spec which were previously added using addSensor().  The
-   *  list should be sorted in ascending order by id.
-   *
-   *  If info specifies a truthy value for a doDetail property, 
-   *  then each sensor S returned within the data array will have
-   *  an additional S.sensorType property giving the complete 
-   *  sensor-type for that sensor S.
-   *
-   *  The returned object will contain a lastIndex property.  If its
-   *  value is non-negative, then that value can be specified as the
-   *  index property for the next search.  Note that the index (when 
-   *  set to the lastIndex) and count search-spec parameters can be used
-   *  in successive calls to allow scrolling through the collection of
-   *  all sensors which meet some filter criteria.
-   *
-   *  All user errors must be thrown as an array of objects.
-   */
-  async findSensors(info) {
-    const searchSpecs = validate('findSensors', info);
-    //@TODO
-    return {};
-  }
-  
-  /** Subject to validation of search-parameters in info as per
-   *  FN_INFOS.findSensorData, return all sensor reading which satisfy
-   *  search specifications in info.  Note that info must specify a
-   *  sensorId property giving the id of a previously added sensor
-   *  whose readings are desired.  The search-specs can filter the
-   *  results by specifying one or more statuses (separated by |).
-   *
-   *  The returned value should be an object containing a data
-   *  property which is a list of objects giving readings for the
-   *  sensor satisfying the search-specs.  Each object within data
-   *  should contain the following properties:
-   * 
-   *     timestamp: an integer giving the timestamp of the reading.
-   *     value: a number giving the value of the reading.
-   *     status: one of "ok", "error" or "outOfRange".
-   *
-   *  The data objects should be sorted in reverse chronological
-   *  order by timestamp (latest reading first).
-   *
-   *  If the search-specs specify a timestamp property with value T,
-   *  then the first returned reading should be the latest one having
-   *  timestamp <= T.
-   * 
-   *  If info specifies a truthy value for a doDetail property, 
-   *  then the returned object will have additional 
-   *  an additional sensorType giving the sensor-type information
-   *  for the sensor and a sensor property giving the sensor
-   *  information for the sensor.
-   *
-   *  Note that the timestamp and count search-spec parameters can be
-   *  used in successive calls to allow scrolling through the
-   *  collection of all readings for the specified sensor.
-   *
-   *  All user errors must be thrown as an array of objects.
-   */
-  async findSensorData(info) {
-    const searchSpecs = validate('findSensorData', info);
-    //@TODO
-    return {};
-  }
-  
-  
+        if(sensorTypeObj.limits.min>sensorData.value || sensorTypeObj.limits.max<sensorData.value){
+                sensorData.status="error";
+            }
+            else if(sensorObj.expected.min>sensorData.value || sensorObj.expected.max<sensorData.value){
+                sensorData.status="outOfRange";
+            }
+            else if(sensorTypeObj.limits.min<sensorData.value || sensorTypeObj.limits.max>sensorData.value){
+                sensorData.status="ok";
+            }
+        this.sensorDataArray.push(sensorData);
+        //@TODO
+    }
+
+    /** Subject to validation of search-parameters in info as per
+     *  FN_INFOS.findSensorTypes, return all sensor-types which
+     *  satisfy search specifications in info.  Note that the
+     *  search-specs can filter the results by any of the primitive
+     *  properties of sensor types.
+     *
+     *  The returned value should be an object containing a DATA
+     *  property which is a list of sensor-types previously added using
+     *  addSensorType().  The list should be sorted in ascending order
+     *  by id.
+     *
+     *  The returned object will contain a lastIndex property.  If its
+     *  value is non-negative, then that value can be specified as the
+     *  index property for the next search.  Note that the index (when
+     *  set to the lastIndex) and count search-spec parameters can be used
+     *  in successive calls to allow scrolling through the collection of
+     *  all sensor-types which meet some filter criteria.
+     *
+     *
+     *  All user errors must be thrown as an array of objects.
+     */
+
+    async findSensorTypes(info) {
+        const searchSpecs = validate('findSensorTypes', info);
+        const sensorTyperesult = new Object();
+        sensorTyperesult.data = Array.from(this.sensorTypeMap.values());
+
+        if(info.id){
+            sensorTyperesult.data=sensorTyperesult.data.filter(x => x.id === searchSpecs.id);
+        }
+        if(info.manufacturer){
+            sensorTyperesult.data=sensorTyperesult.data.filter(x => x.manufacturer===searchSpecs.manufacturer);
+        }
+        if(info.modelNumber){
+            sensorTyperesult.data=sensorTyperesult.data.filter(x => x.modelNumber===searchSpecs.modelNumber);
+        }
+        if(info.quantity){
+            sensorTyperesult.data=sensorTyperesult.data.filter(x => x.quantity===searchSpecs.quantity);
+        }
+        if(info.unit) {
+            sensorTyperesult.data = sensorTyperesult.data.filter(x => x.unit === searchSpecs.unit);
+        }
+        if(info.count && info.index){
+            sensorTyperesult.data=sensorTyperesult.data.slice(searchSpecs.index,searchSpecs.index+searchSpecs.count);
+            sensorTyperesult.nextIndex = searchSpecs.index+searchSpecs.count;
+        }
+        else if(info.count) {
+            sensorTyperesult.data=sensorTyperesult.data.slice(0,searchSpecs.count);
+        }
+        else {
+            sensorTyperesult.data=sensorTyperesult.data.slice(0,5);
+        }
+      return sensorTyperesult;
+    }
+
+    /** Subject to validation of search-parameters in info as per
+     *  FN_INFOS.findSensors, return all sensors which
+     *  satisfy search specifications in info.  Note that the
+     *  search-specs can filter the results by any of the primitive
+     *  properties of a sensor.
+     *
+     *  The returned value should be an object containing a DATA
+     *  property which is a list of all sensors satisfying the
+     *  search-spec which were previously added using addSensor().  The
+     *  list should be sorted in ascending order by id.
+     *
+     *  If info specifies a truthy value for a doDetail property,
+     *  then each sensor S returned within the DATA array will have
+     *  an additional S.sensorType property giving the complete
+     *  sensor-type for that sensor S.
+     *
+     *  The returned object will contain a lastIndex property.  If its
+     *  value is non-negative, then that value can be specified as the
+     *  index property for the next search.  Note that the index (when
+     *  set to the lastIndex) and count search-spec parameters can be used
+     *  in successive calls to allow scrolling through the collection of
+     *  all sensors which meet some filter criteria.
+     *
+     *  All user errors must be thrown as an array of objects.
+     */
+    async findSensors(info) {
+        const searchSpecs = validate('findSensors', info);
+
+        const sensorResult = new Object();
+        sensorResult.data = Array.from(this.sensorMap.values());
+        if(info.model){
+            sensorResult.data=sensorResult.data.filter(x => x.model===searchSpecs.model);
+        }
+        if(info.id){
+            sensorResult.data=sensorResult.data.filter(x => x.id===searchSpecs.id);
+        }
+        if(info.period){
+            sensorResult.data=sensorResult.data.filter(x => x.period===searchSpecs.period);
+        }
+        if(info.count){
+            sensorResult.data=sensorResult.data.slice(0,searchSpecs.count);
+        }
+        if(!info.count){
+            sensorResult.data=sensorResult.data.slice(0,5);
+        }
+
+        sensorResult.nextIndex = sensorResult.data.length;
+        return sensorResult;
+    }
+    /** Subject to validation of search-parameters in info as per
+     *  FN_INFOS.findSensorData, return all sensor reading which satisfy
+     *  search specifications in info.  Note that info must specify a
+     *  sensorId property giving the id of a previously added sensor
+     *  whose readings are desired.  The search-specs can filter the
+     *  results by specifying one or more statuses (separated by |).
+     *
+     *  The returned value should be an object containing a DATA
+     *  property which is a list of objects giving readings for the
+     *  sensor satisfying the search-specs.  Each object within DATA
+     *  should contain the following properties:
+     *
+     *     timestamp: an integer giving the timestamp of the reading.
+     *     value: a number giving the value of the reading.
+     *     status: one of "ok", "error" or "outOfRange".
+     *
+     *  The DATA objects should be sorted in reverse chronological
+     *  order by timestamp (latest reading first).
+     *
+     *  If the search-specs specify a timestamp property with value T,
+     *  then the first returned reading should be the latest one having
+     *  timestamp <= T.
+     *
+     *  If info specifies a truthy value for a doDetail property,
+     *  then the returned object will have additional
+     *  an additional sensorType giving the sensor-type information
+     *  for the sensor and a sensor property giving the sensor
+     *  information for the sensor.
+     *
+     *  Note that the timestamp and count search-spec parameters can be
+     *  used in successive calls to allow scrolling through the
+     *  collection of all readings for the specified sensor.
+     *
+     *  All user errors must be thrown as an array of objects.
+     */
+    async findSensorData(info) {
+        const searchSpecs = validate('findSensorData', info);
+        var sensorDataResult = new Object();
+        sensorDataResult.data = this.sensorDataArray;
+        if(info.sensorId){
+            sensorDataResult.data=sensorDataResult.data.filter(x => x.sensorId ===searchSpecs.sensorId);
+        }
+        if(info.timestamp){
+            sensorDataResult.data=sensorDataResult.data.filter(x => x.timestamp===searchSpecs.timestamp);
+        }
+        if(info.value){
+            sensorDataResult.data=sensorDataResult.data.filter(x => x.value===searchSpecs.value);
+        }
+        if(info.statuses){
+            console.log(info.statuses);
+            sensorDataResult.data=sensorDataResult.data.filter(x => x.status===searchSpecs.status);
+        }
+        if(info.doDetail){
+            sensorDataResult.sensor = this.sensorMap.get(sensorDataResult.data[0].sensorId);
+            sensorDataResult.sensorType =  this.sensorTypeMap.get(sensorDataResult.sensor.model);
+        }
+        if(info.count){
+            sensorDataResult.data=sensorDataResult.data.slice(0,searchSpecs.count);
+        }
+        if(!info.count){
+            sensorDataResult.data=sensorDataResult.data.slice(0,5);
+        }
+        sensorDataResult.nextIndex = sensorDataResult.data.length;
+        return sensorDataResult;
+    }
 }
 
 module.exports = Sensors;
 
 //@TODO add auxiliary functions as necessary
 
-const DEFAULT_COUNT = 5;    
+const DEFAULT_COUNT = 5;
 
 /** Validate info parameters for function fn.  If errors are
  *  encountered, then throw array of error messages.  Otherwise return
@@ -162,128 +251,128 @@ const DEFAULT_COUNT = 5;
  *  info are passed unchanged into the returned object.
  */
 function validate(fn, info) {
-  const errors = [];
-  const values = validateLow(fn, info, errors);
-  if (errors.length > 0) throw errors; 
-  return values;
+    const errors = [];
+    const values = validateLow(fn, info, errors);
+    if (errors.length > 0) throw errors;
+    return values;
 }
 
 function validateLow(fn, info, errors, name='') {
-  const values = Object.assign({}, info);
-  for (const [k, v] of Object.entries(FN_INFOS[fn])) {
-    const validator = TYPE_VALIDATORS[v.type] || validateString;
-    const xname = name ? `${name}.${k}` : k;
-    const value = info[k];
-    const isUndef = (
-      value === undefined ||
-      value === null ||
-      String(value).trim() === ''
-    );
-    values[k] =
-      (isUndef)
-      ? getDefaultValue(xname, v, errors)
-      : validator(xname, value, v, errors);
-  }
-  return values;
+    const values = Object.assign({}, info);
+    for (const [k, v] of Object.entries(FN_INFOS[fn])) {
+        const validator = TYPE_VALIDATORS[v.type] || validateString;
+        const xname = name ? `${name}.${k}` : k;
+        const value = info[k];
+        const isUndef = (
+            value === undefined ||
+            value === null ||
+            String(value).trim() === ''
+        );
+        values[k] =
+            (isUndef)
+                ? getDefaultValue(xname, v, errors)
+                : validator(xname, value, v, errors);
+    }
+    return values;
 }
 
 function getDefaultValue(name, spec, errors) {
-  if (spec.default !== undefined) {
-    return spec.default;
-  }
-  else {
-    errors.push(`missing value for ${name}`);
-    return;
-  }
+    if (spec.default !== undefined) {
+        return spec.default;
+    }
+    else {
+        errors.push(`missing value for ${name}`);
+        return;
+    }
 }
 
 function validateString(name, value, spec, errors) {
-  assert(value !== undefined && value !== null && value !== '');
-  if (typeof value !== 'string') {
-    errors.push(`require type String for ${name} value ${value} ` +
-		`instead of type ${typeof value}`);
-    return;
-  }
-  else {
-    return value;
-  }
+    assert(value !== undefined && value !== null && value !== '');
+    if (typeof value !== 'string') {
+        errors.push(`require type String for ${name} value ${value} ` +
+            `instead of type ${typeof value}`);
+        return;
+    }
+    else {
+        return value;
+    }
 }
 
 function validateNumber(name, value, spec, errors) {
-  assert(value !== undefined && value !== null && value !== '');
-  switch (typeof value) {
-  case 'number':
-    return value;
-  case 'string':
-    if (value.match(/^[-+]?\d+(\.\d+)?([eE][-+]?\d+)?$/)) {
-      return Number(value);
+    assert(value !== undefined && value !== null && value !== '');
+    switch (typeof value) {
+        case 'number':
+            return value;
+        case 'string':
+            if (value.match(/^[-+]?\d+(\.\d+)?([eE][-+]?\d+)?$/)) {
+                return Number(value);
+            }
+            else {
+                errors.push(`value ${value} for ${name} is not a number`);
+                return;
+            }
+        default:
+            errors.push(`require type Number or String for ${name} value ${value} ` +
+                `instead of type ${typeof value}`);
     }
-    else {
-      errors.push(`value ${value} for ${name} is not a number`);
-      return;
-    }
-  default:
-    errors.push(`require type Number or String for ${name} value ${value} ` +
-		`instead of type ${typeof value}`);
-  }
 }
 
 function validateInteger(name, value, spec, errors) {
-  assert(value !== undefined && value !== null && value !== '');
-  switch (typeof value) {
-  case 'number':
-    if (Number.isInteger(value)) {
-      return value;
+    assert(value !== undefined && value !== null && value !== '');
+    switch (typeof value) {
+        case 'number':
+            if (Number.isInteger(value)) {
+                return value;
+            }
+            else {
+                errors.push(`value ${value} for ${name} is not an integer`);
+                return;
+            }
+        case 'string':
+            if (value.match(/^[-+]?\d+$/)) {
+                return Number(value);
+            }
+            else {
+                errors.push(`value ${value} for ${name} is not an integer`);
+                return;
+            }
+        default:
+            errors.push(`require type Number or String for ${name} value ${value} ` +
+                `instead of type ${typeof value}`);
     }
-    else {
-      errors.push(`value ${value} for ${name} is not an integer`);
-      return;
-    }
-  case 'string':
-    if (value.match(/^[-+]?\d+$/)) {
-      return Number(value);
-    }
-    else {
-      errors.push(`value ${value} for ${name} is not an integer`);
-      return;
-    }
-  default:
-    errors.push(`require type Number or String for ${name} value ${value} ` +
-		`instead of type ${typeof value}`);
-  }
 }
 
 function validateRange(name, value, spec, errors) {
-  assert(value !== undefined && value !== null && value !== '');
-  if (typeof value !== 'object') {
-    errors.push(`require type Object for ${name} value ${value} ` +
-		`instead of type ${typeof value}`);
-  }
-  return validateLow('_range', value, errors, name);
+    assert(value !== undefined && value !== null && value !== '');
+    if (typeof value !== 'object') {
+        errors.push(`require type Object for ${name} value ${value} ` +
+            `instead of type ${typeof value}`);
+    }
+    return validateLow('_range', value, errors, name);
 }
 
 const STATUSES = new Set(['ok', 'error', 'outOfRange']);
 
 function validateStatuses(name, value, spec, errors) {
-  assert(value !== undefined && value !== null && value !== '');
-  if (typeof value !== 'string') {
-    errors.push(`require type String for ${name} value ${value} ` +
-		`instead of type ${typeof value}`);
-  }
-  if (value === 'all') return STATUSES;
-  const statuses = value.split('|');
-  const badStatuses = statuses.filter(s => !STATUSES.has(s));
-  if (badStatuses.length > 0) {
-    errors.push(`invalid status ${badStatuses} in status ${value}`);
-  }
-  return new Set(statuses);
+    assert(value !== undefined && value !== null && value !== '');
+    if (typeof value !== 'string') {
+        errors.push(`require type String for ${name} value ${value} ` +
+            `instead of type ${typeof value}`);
+    }
+    if (value === 'all') return STATUSES;
+    const statuses = value.split('|');
+    const badStatuses = statuses.filter(s => !STATUSES.has(s));
+    if (badStatuses.length > 0) {
+        errors.push(`invalid status ${badStatuses} in status ${value}`);
+    }
+    return new Set(statuses);
 }
 
 const TYPE_VALIDATORS = {
-  'integer': validateInteger,
-  'number': validateNumber,
-  'range': validateRange,
-  'statuses': validateStatuses,
+    'integer': validateInteger,
+    'number': validateNumber,
+    'range': validateRange,
+    'statuses': validateStatuses,
 };
 
 
@@ -295,71 +384,70 @@ const TYPE_VALIDATORS = {
  *              specified, then the property is required.
  */
 const FN_INFOS = {
-  addSensorType: {
-    id: { }, 
-    manufacturer: { }, 
-    modelNumber: { }, 
-    quantity: { }, 
-    unit: { },
-    limits: { type: 'range', },
-  },
-  addSensor:   {
-    id: { },
-    model: { },
-    period: { type: 'integer' },
-    expected: { type: 'range' },
-  },
-  addSensorData: {
-    sensorId: { },
-    timestamp: { type: 'integer' },
-    value: { type: 'number' },
-  },
-  findSensorTypes: {
-    id: { default: null },  //if specified, only matching sensorType returned.
-    index: {  //starting index of first result in underlying collection
-      type: 'integer',
-      default: 0,
+    addSensorType: {
+        id: { },
+        manufacturer: { },
+        modelNumber: { },
+        quantity: { },
+        unit: { },
+        limits: { type: 'range', },
     },
-    count: {  //max # of results
-      type: 'integer',
-      default: DEFAULT_COUNT,
+    addSensor:   {
+        id: { },
+        model: { },
+        period: { type: 'integer' },
+        expected: { type: 'range' },
     },
-  },
-  findSensors: {
-    id: { default: null }, //if specified, only matching sensor returned.
-    index: {  //starting index of first result in underlying collection
-      type: 'integer',
-      default: 0,
+    addSensorData: {
+        sensorId: { },
+        timestamp: { type: 'integer' },
+        value: { type: 'number' },
     },
-    count: {  //max # of results
-      type: 'integer',
-      default: DEFAULT_COUNT,
+    findSensorTypes: {
+        id: { default: null },  //if specified, only matching sensorType returned.
+        index: {  //starting index of first result in underlying collection
+            type: 'integer',
+            default: 0,
+        },
+        count: {  //max # of results
+            type: 'integer',
+            default: DEFAULT_COUNT,
+        },
     },
-    doDetail: { //if truthy string, then sensorType property also returned
-      default: null, 
+    findSensors: {
+        id: { default: null }, //if specified, only matching sensor returned.
+        index: {  //starting index of first result in underlying collection
+            type: 'integer',
+            default: 0,
+        },
+        count: {  //max # of results
+            type: 'integer',
+            default: DEFAULT_COUNT,
+        },
+        doDetail: { //if truthy string, then sensorType property also returned
+            default: null,
+        },
     },
-  },
-  findSensorData: {
-    sensorId: { },
-    timestamp: {
-      type: 'integer',
-      default: Date.now() + 999999999, //some future date
+    findSensorData: {
+        sensorId: { },
+        timestamp: {
+            type: 'integer',
+            default: Date.now() + 999999999, //some future date
+        },
+        count: {  //max # of results
+            type: 'integer',
+            default: DEFAULT_COUNT,
+        },
+        statuses: { //ok, error or outOfRange, combined using '|'; returned as Set
+            type: 'statuses',
+            default: new Set(['ok']),
+        },
+        doDetail: {     //if truthy string, then sensor and sensorType properties
+            default: null,//also returned
+        },
     },
-    count: {  //max # of results
-      type: 'integer',
-      default: DEFAULT_COUNT,
+    _range: { //pseudo-command; used internally for validating ranges
+        min: { type: 'number' },
+        max: { type: 'number' },
     },
-    statuses: { //ok, error or outOfRange, combined using '|'; returned as Set
-      type: 'statuses',
-      default: new Set(['ok']),
-    },
-    doDetail: {     //if truthy string, then sensor and sensorType properties
-      default: null,//also returned
-    },
-  },
-  _range: { //pseudo-command; used internally for validating ranges
-    min: { type: 'number' },
-    max: { type: 'number' },
-  },
-};  
-
+};
