@@ -1,0 +1,12 @@
+{
+  "name": "proj1-sol",
+  "version": "1.0.0",
+  "description": "Programming for the Web NAME : Purva Thakkar BNumber : B00743825 Email : pthakka4@binghamton.edu",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
