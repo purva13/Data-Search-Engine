@@ -1,6 +1,9 @@
-Name:		XXX
-B-Number:	XXX
-Email:		XXX
+Name:		Purva Thakkar
+B-Number:	B00743825
+Email:		pthakka4@binghamton.edu
 
-Add text here as needed.
+For statuses in sensor-data, I have added the statuses field before adding the data to the database. And because we need sensor-type and sensor files first, I request you to follow the order:
+1. Sensor-type
+2. Sensor
+3. Sensor-data, for the load commands. 
 
