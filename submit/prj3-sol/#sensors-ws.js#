@@ -241,13 +241,14 @@ function doGetSensorDataList(app) {
 function doPostSensors(app) {
     return errorWrap(async function (req, res) {
          await app.locals.finder.addSensor(req.body);
-        res.sendStatus(CREATED);
+         res.sendStatus(CREATED);
     });
 }
 function doPostSensorTypes(app) {
     return errorWrap(async function (req, res) {
         await app.locals.finder.addSensorType(req.body);
-        res.sendStatus(CREATED);
+	res.sendStatus(CREATED);
+       // res.json("Created");
     });
 }
 function doPostSensorData(app) {

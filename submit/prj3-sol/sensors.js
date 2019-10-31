@@ -28,7 +28,7 @@ class Sensors {
     const url = mongoDbUrl.slice(0, dbIndex);
     const db = mongoDbUrl.slice(dbIndex + 1);
     const client = await mongo.connect(url, MONGO_OPTIONS);
-    return new Sensors(client, db);    
+    return new Sensors(client, db);
   }
 
   /** Release all resources held by this Sensors instance.
@@ -55,7 +55,7 @@ class Sensors {
     const sensorType = validate('addSensorType', info);
     await this._add(this.sensorTypes, sensorType);
   }
-  
+
   /** Subject to field validation as per validate('addSensor', info)
    *  add sensor specified by info to this.  Note that info.model must
    *  specify the id of an existing sensor-type.  Replace any earlier
@@ -95,16 +95,16 @@ class Sensors {
     let sensorTimestamps = (await this._get(collection, { id: sensorId }))[0];
     if (sensorTimestamps === undefined) {
       sensorTimestamps = {
-	id: sensorId,
-	earliest: timestamp,
-	latest: timestamp,
+        id: sensorId,
+        earliest: timestamp,
+        latest: timestamp,
       };
       doUpdateTimestamps = true;
     }
     else {
       const diffTime = (timestamp - sensorTimestamps.earliest);
       if (diffTime % sensor.period !== 0) {
-	throw [ new AppError('BAD_TIMESTAMP', 'incorrect period for sensor') ];
+        throw [ new AppError('BAD_TIMESTAMP', 'incorrect period for sensor') ];
       }
     }
     const id = sensorDataId(sensorId, timestamp);
@@ -150,19 +150,19 @@ class Sensors {
    *
    *  All user errors must be thrown as an array of objects.
    */
-  async findSensorTypes(info) {
+  async findSensorTypes(info={}) {
     const searchSpecs = validate('findSensorTypes', info);
     const data = await this._get(this.sensorTypes, searchSpecs);
     if (info.id !== undefined && data.length === 0) {
       throw [ new AppError('NOT_FOUND',
-			   `no results for sensor-type id '${info.id}'`) ];
+          `no results for sensor-type id '${info.id}'`) ];
     }
     return { data,
-	     nextIndex: nextIndex(searchSpecs, data),
-	     previousIndex: previousIndex(searchSpecs, data),
-	   };
+      nextIndex: nextIndex(searchSpecs, data),
+      previousIndex: previousIndex(searchSpecs, data),
+    };
   }
-  
+
   /** Subject to validation of search-parameters in info as per
    *  validate('findSensors', info), return all sensors which satisfy
    *  search specifications in info.  Note that the search-specs can
@@ -194,27 +194,27 @@ class Sensors {
    *
    *  All user errors must be thrown as an array of objects.
    */
-  async findSensors(info) {
+  async findSensors(info={}) {
     const searchSpecs = validate('findSensors', info);
     const sensors = await this._get(this.sensors, searchSpecs);
     if (info.id !== undefined && sensors.length === 0) {
       throw [ new AppError('NOT_FOUND',
-			   `no results for sensor id '${info.id}'`) ];
+          `no results for sensor id '${info.id}'`) ];
     }
     if (searchSpecs._doDetail) {
       for (const sensor of sensors) {
-	const sensorTypes =
-	  await this._get(this.sensorTypes, { id: sensor.model });
-	assert(sensorTypes.length === 1);
-	sensor.sensorType = sensorTypes[0];
+        const sensorTypes =
+            await this._get(this.sensorTypes, { id: sensor.model });
+        assert(sensorTypes.length === 1);
+        sensor.sensorType = sensorTypes[0];
       }
     }
     return { data: sensors,
-	     nextIndex: nextIndex(searchSpecs, sensors),
-	     previousIndex: previousIndex(searchSpecs, sensors),
-	   };
+      nextIndex: nextIndex(searchSpecs, sensors),
+      previousIndex: previousIndex(searchSpecs, sensors),
+    };
   }
-  
+
   /** Subject to validation of search-parameters in info as per
    *  validate('findSensorData', info), return all sensor readings
    *  which satisfy search specifications in info.  Note that info
@@ -227,7 +227,7 @@ class Sensors {
    *  property which is a list of objects giving readings for the
    *  sensor satisfying the search-specs.  Each object within data
    *  should contain the following properties:
-   * 
+   *
    *     timestamp: an integer giving the timestamp of the reading.
    *     value: a number giving the value of the reading.
    *     status: one of "ok", "error" or "outOfRange".
@@ -238,9 +238,9 @@ class Sensors {
    *  If the search-specs specify a timestamp property with value T,
    *  then the first returned reading should be the latest one having
    *  timestamp <= T.
-   * 
-   *  If info specifies a truthy value for a doDetail property, 
-   *  then the returned object will have additional 
+   *
+   *  If info specifies a truthy value for a doDetail property,
+   *  then the returned object will have additional
    *  an additional sensorType giving the sensor-type information
    *  for the sensor and a sensor property giving the sensor
    *  information for the sensor.
@@ -252,46 +252,41 @@ class Sensors {
    *
    *  All user errors must be thrown as an array of objects.
    */
-  async findSensorData(info) {
+  async findSensorData(info={}) {
     const searchSpecs = validate('findSensorData', info);
-    const { sensorId, timestamp, statuses } = searchSpecs;
+    const {sensorId, timestamp, statuses} = searchSpecs;
     const count = searchSpecs._count;
-    const sensor = (await this._get(this.sensors, { id: sensorId }))[0];
+    const sensor = (await this._get(this.sensors, {id:sensorId}))[0];
     if (!sensor) {
       throw [ new AppError('X_ID', `unknown sensor id "${sensorId}"`) ];
     }
-    const sensorType =
-      (await this._get(this.sensorTypes, {id: sensor.model}))[0];
+    const sensorType = (await this._get(this.sensorTypes, {id:sensor.model}))[0];
     assert(sensorType);
-    const sensorTimestamps =
-      (await this._get(this.sensorData, { id: sensorId }))[0];
+    const sensorTimestamps = (await this._get(this.sensorData, {id:sensorId}))[0];
     if (!sensorTimestamps) {
       const err = `no sensor data for sensor "${sensorId}"`;
       throw [ new AppError('NOT_FOUND', err) ];
     }
     const [period, latest] = [Number(sensor.period), sensorTimestamps.latest];
-    const startTime =
-	  (timestamp > latest)
-	  ? latest
-	  : latest - Math.ceil((latest - timestamp)/period)*period;
+    const startTime = (timestamp > latest) ? latest : latest - Math.ceil((latest - timestamp)/period)*period;
     const data = [];
-    for (let t = startTime;
-	 t >= sensorTimestamps.earliest && data.length < count;
-	 t = t - period) {
-      const id = sensorDataId(sensorId, t);
-      const v = (await this._get(this.sensorData, { id }))[0];
-      if (v === undefined) continue;
-      const status =
-	  !inRange(v.value, sensorType.limits) ? 'error'
-	: !inRange(v.value, sensor.expected) ? 'outOfRange' : 'ok';
-      if (statuses.has(status)) {
-	data.push({
-	  timestamp: t,
-	  value: v.value,
-	  status,
-	});
+      for (let t = startTime;
+           t >= sensorTimestamps.earliest && data.length < count;
+           t = t - period) {
+        const id = sensorDataId(sensorId, t);
+        const v = (await this._get(this.sensorData, {id}))[0];
+        if (v === undefined) continue;
+        const status =
+            !inRange(v.value, sensorType.limits) ? 'error'
+                : !inRange(v.value, sensor.expected) ? 'outOfRange' : 'ok';
+        if (statuses.has(status)) {
+          data.push({
+            timestamp: t,
+            value: v.value,
+            status,
+          });
+        }
       }
-    }
     const ret = { data };
     if (searchSpecs._doDetail) {
       ret.sensorType = sensorType; ret.sensor = sensor;
@@ -312,7 +307,7 @@ class Sensors {
     const mongoInfo = toMongoInfo(searchSpecs);
     let cursor;
     if (mongoInfo._id !== undefined) {
-      cursor = await collection.find({_id: mongoInfo._id});
+      cursor = await collection.find({id:mongoInfo._id});
     }
     else {
       const [ count, index ] = [ mongoInfo._count, mongoInfo._index ];
@@ -320,7 +315,7 @@ class Sensors {
       assert(count !== undefined);
       const query = Object.assign({}, mongoInfo);
       for (const k of Object.keys(mongoInfo)) {
-	if (k.startsWith('_') && k !== '_id') delete query[k];
+        if (k.startsWith('_') && k !== '_id') delete query[k];
       }
       cursor = collection.find(query).sort({_id: 1}).skip(index).limit(count);
     }
@@ -328,8 +323,8 @@ class Sensors {
     return mongoInfos.map(e => fromMongoInfo(e));
   }
 
-  
-  
+
+
 } //class Sensors
 
 module.exports = Sensors.newSensors;
@@ -344,10 +339,10 @@ function sensorDataId(sensorId, timestamp) {
 }
 
 function toMongoInfo(info) {
-  const isNoId = (info.id === undefined) || (info.id === null); 
+  const isNoId = (info.id === undefined) || (info.id === null);
   const mongoInfo = (isNoId) ? info : Object.assign({_id: info.id}, info);
   if (isNoId) delete mongoInfo.id;
-  return mongoInfo;  
+  return mongoInfo;
 }
 
 function fromMongoInfo(mongoInfo) {
@@ -359,17 +354,17 @@ function fromMongoInfo(mongoInfo) {
 function nextIndex(searchSpec, data) {
   const isIdSearch = (searchSpec.id !== undefined) && (searchSpec.id !== null);
   return (isIdSearch || data.length < searchSpec._count)
-    ? -1
-    : searchSpec._index + searchSpec._count;
+      ? -1
+      : searchSpec._index + searchSpec._count;
 }
 
 function previousIndex(search, data) {
   const isIdSearch = (search.id !== undefined) && (search.id !== null);
   return (isIdSearch || search._index == undefined)
-    ? -1
-    : search._index > search._count
-    ? search._index - search._count
-    : 0;
+      ? -1
+      : search._index > search._count
+          ? search._index - search._count
+          : 0;
 }
 
 const COLLECTIONS = [

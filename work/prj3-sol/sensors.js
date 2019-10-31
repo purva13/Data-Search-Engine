@@ -263,8 +263,6 @@ class Sensors {
     const sensorType = (await this._get(this.sensorTypes, {id:sensor.model}))[0];
     assert(sensorType);
     const sensorTimestamps = (await this._get(this.sensorData, {id:sensorId}))[0];
-    console.log("sensorTimestamps");
-    console.log(sensorTimestamps.latest);
     if (!sensorTimestamps) {
       const err = `no sensor data for sensor "${sensorId}"`;
       throw [ new AppError('NOT_FOUND', err) ];
@@ -272,23 +270,23 @@ class Sensors {
     const [period, latest] = [Number(sensor.period), sensorTimestamps.latest];
     const startTime = (timestamp > latest) ? latest : latest - Math.ceil((latest - timestamp)/period)*period;
     const data = [];
-    for (let t = startTime;
-         t >= sensorTimestamps.earliest && data.length < count;
-         t = t - period) {
-      const id = sensorDataId(sensorId, t);
-      const v = (await this._get(this.sensorData, { id }))[0];
-      if (v === undefined) continue;
-      const status =
-          !inRange(v.value, sensorType.limits) ? 'error'
-              : !inRange(v.value, sensor.expected) ? 'outOfRange' : 'ok';
-      if (statuses.has(status)) {
-        data.push({
-          timestamp: t,
-          value: v.value,
-          status,
-        });
+      for (let t = startTime;
+           t >= sensorTimestamps.earliest && data.length < count;
+           t = t - period) {
+        const id = sensorDataId(sensorId, t);
+        const v = (await this._get(this.sensorData, {id}))[0];
+        if (v === undefined) continue;
+        const status =
+            !inRange(v.value, sensorType.limits) ? 'error'
+                : !inRange(v.value, sensor.expected) ? 'outOfRange' : 'ok';
+        if (statuses.has(status)) {
+          data.push({
+            timestamp: t,
+            value: v.value,
+            status,
+          });
+        }
       }
-    }
     const ret = { data };
     if (searchSpecs._doDetail) {
       ret.sensorType = sensorType; ret.sensor = sensor;
