@@ -163,25 +163,25 @@ function doGetSensorTypesList(app) {
             }
             if (results.previousIndex !== -1 && results.previousIndex !== 0) {
                 if (req.query._count) {
-                    results.self = new URL(getRequestUrl(req));
+                    //results.self = new URL(getRequestUrl(req));
                     results.previous = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.previousIndex}` + "&_count=" + `${req.query._count}`);
                     results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}` + "&_count=" + `${req.query._count}`);
                 } else {
-                    results.self = new URL(getRequestUrl(req));
+                    //results.self = new URL(getRequestUrl(req));
                     results.previous = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.previousIndex}`);
                     results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}`);
                 }
             }
             if (results.nextIndex !== -1) {
                 if (req.query._count) {
-                    results.self = new URL(getRequestUrl(req));
+                    //results.self = new URL(getRequestUrl(req));
                     results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}` + "&_count=" + `${req.query._count}`);
                 } else {
-                    results.self = new URL(getRequestUrl(req));
+                    //results.self = new URL(getRequestUrl(req));
                     results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}`);
                 }
             }
-
+	    results.self = new URL(getRequestUrl(req));
             res.json(results);
         }
         catch(err){
