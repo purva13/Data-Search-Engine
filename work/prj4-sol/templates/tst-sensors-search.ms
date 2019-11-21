@@ -51,7 +51,7 @@
     	   </tr>
          </thead>
          <tbody>
-              {{#users1}}
+              {{#users}}
               <tr>
               {{#fields}}
               {{#value}}
@@ -59,7 +59,7 @@
               {{/value}}
               {{/fields}}
               </tr>
-              {{/users1}}
+              {{/users}}
          </tbody>
     </table>
     

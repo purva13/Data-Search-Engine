@@ -80,17 +80,17 @@ const FIELDS_INFO = {
         friendlyName: 'Minimum',
         isSensorType: true,
         isRequired: true,
-        regex: /[0-9]+/,
+        regex: /\d+/,
         error: 'Minimun field must be a digit',
     },
     maximum: {
         friendlyName: 'Maximum',
         isSensorType: true,
         isRequired: true,
-        regex: /[0-9]+/,
+        regex: /\d+/,
         error: 'Minimun field must be a digit',
     },
-    sensorId: {
+    sensorID: {
         friendlyName: 'Sensor ID',
         isRequired1: true,
         isSensor: true,
@@ -118,14 +118,14 @@ const FIELDS_INFO = {
         friendlyName: 'Expected Minimum',
         isRequired1: true,
         isSensor: true,
-        regex: /[0-9]+/,
+        regex: /\d+/,
         error: 'Minimun field must be a digit',
     },
     sensorMax: {
         friendlyName: 'Expected Maximum',
         isRequired1: true,
         isSensor: true,
-        regex: /[0-9]+/,
+        regex: /\d+/,
         error: 'Maximum field must be a digit',
     },
 };
@@ -211,11 +211,10 @@ function getSearchSensorTypeForm(app) {
         errors = {_: 'no users found for specified criteria; please retry'};
       }
       let model;
-      const array=[1];
         const fields_SensorType = users.data.map((u) => ({id: u.id, fields: fieldsWithValues(u)}));
-        let nextURL = '/tst-sensor-types-search.html?'+ users.next.split("?")[1];
+        //let nextURL = '/tst-sensor-types-search.html?'+ users.next.split("?")[1];
         //let prevURL = '/tst-sensor-types-search.html?'+ users.previous.split("?")[1];
-        model = { base: app.locals.base, users: fields_SensorType, fields: FIELDS , next: nextURL , previous:''};
+        model = { base: app.locals.base, users: fields_SensorType, fields: FIELDS , next: '' , previous:''};
       const html = doMustache(app, 'tst-sensor-types-search', model);
       res.send(html);
     };
@@ -232,11 +231,13 @@ function getSearchSensorTypeForm(app) {
 function getAddSensor(app){
     return async function(req, res) {
         const user = getNonEmptyValues(req.body);
-        let errors = validate(user, ['sensorId']);
+        let errors = validate(user, ['sensorID']);
         var min=user.sensorMin;
         var max=user.sensorMax;
+
         user.expected={min,max};
-        user.id = user.sensorId;
+        user.id = user.sensorID;
+        delete user.sensorID;
         if (!errors) {
           try {
             await app.locals.model.update('sensors', user);       
@@ -259,8 +260,7 @@ function getAddSensor(app){
 
 function getSearchSensorForm(app) {
     return async function(req, res) {
-      const isSubmit = req.query.submit !== undefined;
-      let users1 = [];
+      let users = [];
       let errors = undefined;
       const search = getNonEmptyValues(req.query);
         errors = validate(search);
@@ -268,28 +268,30 @@ function getSearchSensorForm(app) {
       const msg = 'at least one search parameter must be specified';
       errors = Object.assign(errors || {}, { _: msg });
         }
-      const q = querystring.stringify(search);
+      search.id = search.sensorID;
+      delete search.sensorID;
       try {
-        users1 = await app.locals.model.list('sensors', search);
+        users = await app.locals.model.list('sensors', search);
         let i = 0;
-        while(i<users1.data.length){
-            //delete users.data[i].id;
-            users1.data[i].sensorMin = users1.data[i].expected.min;
-            users1.data[i].sensorMax = users1.data[i].expected.max;
+        while(i<users.data.length){
+            delete users.data[i].minimum;
+            delete users.data[i].maximum;
+            users.data[i].sensorMin = users.data[i].expected.min;
+            users.data[i].sensorMax = users.data[i].expected.max;
             i++;
         }
-        console.log(users1);
       }
+      
       catch (err) {
             console.error(err);
         errors = wsErrors(err);
       }
-      if (users1.length === 0) {
+      if (users.length === 0) {
         errors = {_: 'no users found for specified criteria; please retry'};
       }
       let model;
-        const fields_Sensors = users1.data.map((u) => ({id: u.id, fields: fieldsWithValues(u)}));
-        model = { base: app.locals.base, users1: fields_Sensors, fields: FIELDS };
+        const fields_Sensors = users.data.map((u) => ({id: u.id, fields: fieldsWithValues(u)}));
+        model = { base: app.locals.base, users: fields_Sensors, fields: FIELDS };
       const html = doMustache(app, 'tst-sensors-search', model);
       res.send(html);
     };
