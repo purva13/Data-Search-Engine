@@ -1,8 +1,6 @@
 class AppError {
 
-  constructor(code, msg, widget) {
-    this.code = code; this.msg = msg; this.widget = widget;
-  }
+  constructor(code, msg) { this.code = code; this.msg = msg; }
 
   toString() { return `${this.code}: ${this.msg}`; }
 }

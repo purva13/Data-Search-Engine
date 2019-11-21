@@ -12,7 +12,7 @@ function validate(fn, info) {
   const errors = [];
   if (info._id !== undefined) {
     const err = 'the _id parameter is reserved for internal use only';
-    errors.push(new AppError('RESERVED', err, '_id'));
+    errors.push(new AppError('RESERVED', err));
   }
   const values = validateLow(fn, info, errors);
   if (errors.length > 0) throw errors;
@@ -37,7 +37,7 @@ function validateLow(fn, info, errors, name='') {
     const val = 
       (isUndef)
       ? getDefaultValue(xname, v, errors)
-      : validator(xname, value, v, errors);
+     : validator(xname, value, v, errors);
     if (val !== undefined) values[k] = val;
   }
   return values;
@@ -48,7 +48,7 @@ function getDefaultValue(name, spec, errors) {
     return spec.default;
   }
   else if (spec.isRequired) {
-    errors.push(new AppError('MISSING', `missing value for ${name}`, name));
+    errors.push(new AppError('MISSING', `missing value for ${name}`));
   }
   return;
 }
@@ -58,7 +58,7 @@ function validateString(name, value, spec, errors) {
   if (typeof value !== 'string') {
     const err = `require type String for ${name} value ${value} ` +
 		`instead of type ${typeof value}`
-    errors.push(new AppError('TYPE', err, name));
+    errors.push(new AppError('TYPE', err));
     return;
   }
   else {
@@ -77,13 +77,13 @@ function validateNumber(name, value, spec, errors) {
     }
     else {
       const err = `value ${value} for ${name} is not a number`;
-      errors.push(new AppError('TYPE', err, name));
+      errors.push(new AppError('TYPE', err));
       return;
     }
   default:
     const err = `require type Number or String for ${name} value ${value} ` +
 		`instead of type ${typeof value}`
-    errors.push(new AppError('TYPE', err, name));
+    errors.push(new AppError('TYPE', err));
   }
 }
 
@@ -96,7 +96,7 @@ function validateInteger(name, value, spec, errors) {
     }
     else {
       const err = `value ${value} for ${name} is not an integer`;
-      errors.push(new AppError('TYPE', err, name));
+      errors.push(new AppError('TYPE', err));
       return;
     }
   case 'string':
@@ -105,13 +105,13 @@ function validateInteger(name, value, spec, errors) {
     }
     else {
       const err = `value ${value} for ${name} is not an integer`;
-      errors.push(new AppError('TYPE', err, name));
+      errors.push(new AppError('TYPE', err));
       return;
     }
   default:
     const err = `require type Number or String for ${name} value ${value} ` +
                 `instead of type ${typeof value}`;
-    errors.push(new AppError('TYPE', err, name));
+    errors.push(new AppError('TYPE', err));
   }
 }
 
@@ -120,7 +120,7 @@ function validateRange(name, value, spec, errors) {
   if (typeof value !== 'object') {
     const err = `require type Object for ${name} value ${value} ` +
 		`instead of type ${typeof value}`;
-    errors.push(new AppError('TYPE', err, name));
+    errors.push(new AppError('TYPE', err));
   }
   return validateLow('_range', value, errors, name);
 }
@@ -132,14 +132,14 @@ function validateStatuses(name, value, spec, errors) {
   if (typeof value !== 'string') {
     const err = `require type String for ${name} value ${value} ` +
 		`instead of type ${typeof value}`;
-    errors.push(new AppError('TYPE', err, name));
+    errors.push(new AppError('TYPE', err));
   }
   if (value === 'all') return STATUSES;
   const statuses = value.split('|');
   const badStatuses = statuses.filter(s => !STATUSES.has(s));
   if (badStatuses.length > 0) {
     const err = `invalid status ${badStatuses} in status ${value}`;
-    errors.push(new AppError('TYPE', err, name));
+    errors.push(new AppError('TYPE', err));
   }
   return new Set(statuses);
 }

@@ -11,278 +11,216 @@ const NOT_FOUND = 404;
 const CONFLICT = 409;
 const SERVER_ERROR = 500;
 
-//const base = '/users';
-//const SEN = '/sensors';
-
 function serve(port, sensors) {
-  //@TODO set up express app, routing and listen
-    const app = express();
-    app.locals.port = port;
-    app.locals.finder = sensors;
-    setupRoutes(app);
-    const server = app.listen(port, async function() {
-        console.log(`PID ${process.pid} listening on port ${port}`);
-    });
-    return server;
-
+  const app = express();
+  app.locals.port = port;
+  app.locals.sensors = sensors;
+  setupRoutes(app);
+  app.listen(port, function() {
+    console.log(`listening on port ${port}`);
+  });
 }
 
 module.exports = { serve };
 
-//@TODO routing function, handlers, utility functions
+/******************************** Routing ******************************/
+
 function setupRoutes(app) {
-    const base = app.locals.base;
-    app.use(cors());
-    app.use(bodyParser.json()); //all incoming bodies are JSON
+  const sensors = app.locals.sensors;
+  app.use(cors());
+  app.use(bodyParser.json());
 
-    app.get('/sensors', doGetSensorList(app));
-    app.get('/sensor-types', doGetSensorTypesList(app));
-    app.get('/sensor-data/:sensorId', doGetSensorDataList(app));
-    app.get(`/sensor-data/:sensorId/:timestamp`, doSensorDataList(app));
-    app.get(`/sensors/:id`, doSensorList(app));
-    app.get(`/sensor-types/:id`, doSensorTypesList(app));
-    app.get(`/sensor-data/:sensorId`, doSensorDataList(app));
-    app.post(`/sensors`, doPostSensors(app));
-    app.post(`/sensor-types`, doPostSensorTypes(app));
-    app.post(`/sensor-data/:id`, doPostSensorData(app));
+  const scrollOpts = {
+    next: nextBatch,
+    previous: previousBatch,
+    itemSelf: itemSelf(['id']),
+  };
+  
+  const idOpts = { itemSelf: itemSelf(), };
+  
+  app.get('/sensor-types', find(app, sensors.findSensorTypes, scrollOpts));
+  app.get('/sensor-types/:id', find(app, sensors.findSensorTypes, idOpts));
+  app.post('/sensor-types/', add(app, sensors.addSensorType,
+				 { location: sensorLocation }));
 
-    //app.use(doErrors()); //must be last; setup for server errors
-}
- function doSensorList(app) {
-    return errorWrap(async function (req, res) {
-        try {
-            let results = await app.locals.finder.findSensors(req.params);
-            results.data.forEach(function (element) {
-                element.self = new URL(getRequestUrl(req) + "/" + element.id);
-            });
-            if (results.data.length === 0) {
-                throw{
-                    errors: true,
-                    code: 'NOT_FOUND',
-                    message: `no data for timestamp ${req.params.id}`,
-                };
-            } else {
-                res.json({"results": results, "self": new URL(getRequestUrl(req))});
-            }
-        }
-        catch(err){
-            const mapped = mapError(err);
-            const newObj = Object.assign({}, mapped);
-            delete newObj.status;
-            const newObj1 = {errors:[newObj]};
-            res.status(mapped.status).json(newObj1);
-        }
+  app.get('/sensors', find(app, sensors.findSensors, scrollOpts));
+  app.get('/sensors/:id', find(app, sensors.findSensors, idOpts));
+  app.post('/sensors/', add(app, sensors.addSensor,
+			    { location: sensorLocation }));
 
-    });
-}
-function doGetSensorList(app) {
-    return errorWrap(async function (req, res) {
-        try {
-            console.log("in get sensor");
-            console.log(req.query);
-            const q = req.query || {};
-            let results = await app.locals.finder.findSensors(q);
-            results.data.forEach(function (element) {
-                element.self = new URL(getRequestUrl(req) + "/" + element.id);
-            });
-            if(req.params.id) {
-                if (results.data.length === 0) {
-                    throw{
-                        errors: true,
-                        code: 'NOT_FOUND',
-                        message: `no data for model ${req.query.model}`,
-                    };
-                }
-            }
-            if (results.previousIndex !== -1 && results.previousIndex !== 0) {
-                if (req.query._count) {
-                    results.previous = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.previousIndex}` + "&_count=" + `${req.query._count}`);
-                } else {
-                    results.previous = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.previousIndex}`);
-                }
-            }
-            if (results.nextIndex !== -1) {
-                if (req.query._count) {
-                    results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}` + "&_count=" + `${req.query._count}`);
-                } else {
-                    results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}`);
-                }
-            }
-            results.self = new URL(getRequestUrl(req));
-            res.json(results);
-        }
-        catch(err){
-            const mapped = mapError(err);
-            const newObj = Object.assign({}, mapped);
-            delete newObj.status;
-            const newObj1 = {errors:[newObj]};
-            res.status(mapped.status).json(newObj1);
-        }
-    });
-}
-function doSensorTypesList(app) {
-    return errorWrap(async function (req, res) {
-        try {
-            let results = await app.locals.finder.findSensorTypes(req.params);
-            results.data.forEach(function (element) {
-                element.self = new URL(getRequestUrl(req) + "/" + element.id);
-            });
-            if (results.data.length === 0) {
-                throw{
-                    errors: true,
-                    code: 'NOT_FOUND',
-                    message: `no data for id ${req.params.id}`,
-                };
-            } else {
-                res.json({"results": results, "self": new URL(getRequestUrl(req))});
-            }
-        }
-        catch(err){
-            const mapped = mapError(err);
-            const newObj = Object.assign({}, mapped);
-            delete newObj.status;
-            const newObj1 = {errors:[newObj]};
-            res.status(mapped.status).json(newObj1);
-        }
-    });
-}
-function doGetSensorTypesList(app) {
-    return errorWrap(async function (req, res) {
-        try {
-            const q = req.query || {};
-            let results = await app.locals.finder.findSensorTypes(q);
-            results.data.forEach(function (element) {
-                element.self = new URL(getRequestUrl(req) + "/" + element.id);
-            });
-            if (results.data.length === 0) {
-                throw{
-                    errors: true,
-                    code: 'NOT_FOUND',
-                    message: `no data for id ${req.query._id}`,
-                };
-            }
-            if (results.previousIndex !== -1 && results.previousIndex !== 0) {
-                if (req.query._count) {
-                    results.self = new URL(getRequestUrl(req));
-                    results.previous = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.previousIndex}` + "&_count=" + `${req.query._count}`);
-                    results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}` + "&_count=" + `${req.query._count}`);
-                } else {
-                    results.self = new URL(getRequestUrl(req));
-                    results.previous = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.previousIndex}`);
-                    results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}`);
-                }
-            }
-            if (results.nextIndex !== -1) {
-                if (req.query._count) {
-                    results.self = new URL(getRequestUrl(req));
-                    results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}` + "&_count=" + `${req.query._count}`);
-                } else {
-                    results.self = new URL(getRequestUrl(req));
-                    results.next = new URL((getRequestUrl(req)).split('?')[0] + "?_index=" + `${results.nextIndex}`);
-                }
-            }
+  app.get('/sensor-data/:sensorId',
+	  find(app, sensors.findSensorData,
+	       { itemSelf: itemSelf(['timestamp']), }));
+  app.get('/sensor-data/:sensorId/:timestamp',
+	  find(app, sensors.findSensorData,
+	       { results: sensorDataResults,
+		 searchParams: dataSearchParams,
+	         itemSelf: itemSelf(),}));
+  app.post('/sensor-data/:sensorId',
+	   add(app, sensors.addSensorData, { location: dataLocation }));
 
-            res.json(results);
-        }
-        catch(err){
-            const mapped = mapError(err);
-            const newObj = Object.assign({}, mapped);
-            delete newObj.status;
-            const newObj1 = {errors:[newObj]};
-            res.status(mapped.status).json(newObj1);
-        }
-    });
+  app.use(doErrors()); //must be last   
 }
-function doSensorDataList(app) {
-    return errorWrap(async function (req, res) {
-        try {
-            let results = await app.locals.finder.findSensorData(req.params);
-            if (req.params.timestamp) {
-                let a = req.params.timestamp
-                results.data = results.data.filter(x => x.timestamp == a);
-            }
-            results.data.forEach(function (element) {
-                element.self = new URL(getRequestUrl(req));
-            });
-            if (results.data.length === 0) {
-                throw{
-                    errors: true,
-                    code: 'NOT_FOUND',
-                    message: `no data for timestamp ${req.params.timestamp}`,
-                };
-            }
-            else{
-                res.json({"results": results, "self": new URL(getRequestUrl(req))});
-            }
-        }
-        catch(err){
-            const mapped = mapError(err);
-            const newObj = Object.assign({}, mapped);
-            delete newObj.status;
-            const newObj1 = {errors:[newObj]};
-            res.status(mapped.status).json(newObj1);
-        }
-    });
-}
-function doGetSensorDataList(app) {
-    return errorWrap(async function (req, res) {
-        const q = req.query || {};
-        let id = getRequestUrl(req).split('/')[4].split('?')[0];
-        q.sensorId = id;
-        let results = await app.locals.finder.findSensorData(q);
-        results.data.forEach(function (element) {
-            element.self = new URL((getRequestUrl(req).split('?')[0]+"/"+element.timestamp));
-        });
-        results.self = new URL(getRequestUrl(req));
 
-        res.json(results);
-    });
+/****************************** Handlers *******************************/
+
+function find(app, sensorFn, opts={}) {
+  return errorWrap(async function(req, res) {
+    const q = opts.searchParams ? opts.searchParams(req)
+	                        : Object.assign({}, req.params, req.query);
+    if (opts.requestValidate) opts.requestValidate(req, q);
+    try {
+      let results = await sensorFn.call(app.locals.sensors, q);
+      if (opts.results) results = opts.results(req, q, results);
+      if (opts.next) opts.next(req, results);
+      if (opts.previous) opts.previous(req, results);
+      if (opts.itemSelf) results.data.forEach(item => opts.itemSelf(req, item));
+      results.self = requestUrl(req);
+      res.json(results);
+    }
+    catch (err) {
+      const mapped = mapError(err);
+      res.status(mapped.status).json({ errors: mapped.errors });
+    }
+  });
 }
-function doPostSensors(app) {
-    return errorWrap(async function (req, res) {
-         await app.locals.finder.addSensor(req.body);
-        res.sendStatus(CREATED);
-    });
+
+function add(app, sensorFn, opts={}) {
+  return errorWrap(async function(req, res) {
+    try {
+      const obj = Object.assign({}, req.params, req.query, req.body);
+      const results = await sensorFn.call(app.locals.sensors, obj);
+      if (opts.location) {
+	res.append('Location', opts.location(req, obj, results));
+      }
+      res.sendStatus(CREATED);
+    }
+    catch(err) {
+      const mapped = mapError(err);
+      res.status(mapped.status).json({ errors: mapped.errors });
+    }
+  });
 }
-function doPostSensorTypes(app) {
-    return errorWrap(async function (req, res) {
-        await app.locals.finder.addSensorType(req.body);
-        res.sendStatus(CREATED);
-    });
+
+/************************ Option Functions *****************************/
+
+function dataSearchParams(req) {
+  return Object.assign({statuses: 'all'}, req.params, req.query);
 }
-function doPostSensorData(app) {
-    return errorWrap(async function (req, res) {
-        let id = getRequestUrl(req).split('/')[4];
-        req.body.sensorId = id;
-        await app.locals.finder.addSensorData(req.body);
-        res.sendStatus(CREATED);
-    });
+
+function nextBatch(req, results) {
+  if (results.nextIndex !== undefined && results.nextIndex >= 0) {
+    results.next = requestUrl(req, results.nextIndex);
+  }
 }
-function doErrors(app){
-    console.log("In DoErrors");
-    return errorWrap(async function(req, res) {console.log("5")});
+
+function previousBatch(req, results) {
+  const index = req.query._index;
+  if (results.previousIndex !== undefined && results.previousIndex >= 0 &&
+      index !== undefined && index > 0) {
+    results.prev = requestUrl(req, results.previousIndex);
+  }
 }
+
+function itemSelf(properties=[]) {
+  return (req, item) => {
+    let url = requestUrl(req);
+    url = url.replace(/\?.*$/, '');
+    for (p of properties) { url += '/' + item[p]; }
+    item.self = url;
+  };
+}
+
+function sensorDataResults(req, query, results) {
+  if (query.timestamp) {
+    if (results.data.length === 0 ||
+	results.data[0].timestamp !== Number(query.timestamp)) {
+      const msg = `no data for timestamp '${query.timestamp}'`;
+      throw [ new AppError('NOT_FOUND', msg) ];
+    }
+    results.data = results.data.slice(0, 1);
+    results.nextIndex = -1;
+    return results;
+  }
+  else {
+    return results;
+  }  
+}
+
+function sensorLocation(req, obj, results) {
+  return requestUrl(req) + '/' + obj.id;
+}
+
+function dataLocation(req, obj, results) {
+  return requestUrl(req) + '/' + obj.timestamp;
+}
+
+
+/*************************** Error Handling ****************************/
+
+/** Ensures a server error results in nice JSON sent back to client
+ *  with details logged on console.
+ */ 
+function doErrors(app) {
+  return async function(err, req, res, next) {
+    res.status(SERVER_ERROR);
+    res.json({ code: 'SERVER_ERROR', message: err.message });
+    console.error(err);
+  };
+}
+
+/** Set up error handling for handler by wrapping it in a 
+ *  try-catch with chaining to error handler on error.
+ */
 function errorWrap(handler) {
-    return async (req, res, next) => {
-        try {
-            await handler(req, res, next);
-        }
-        catch (err) {
-            next(err);
-        }
-    };
-}
-function getRequestUrl(req) {
-    const port = req.app.locals.port;
-    return `${req.protocol}://${req.hostname}:${port}${req.originalUrl}`;
+  return async (req, res, next) => {
+    try {
+      await handler(req, res, next);
+    }
+    catch (err) {
+      next(err);
+    }
+  };
 }
 
 const ERROR_MAP = {
-    EXISTS: CONFLICT,
-    NOT_FOUND: NOT_FOUND
+  EXISTS: CONFLICT,
+  NOT_FOUND: NOT_FOUND,
+  X_ID: NOT_FOUND,
 }
 
+/** Map domain/internal errors into suitable HTTP errors.  Return'd
+ *  object will have a "status" property corresponding to HTTP status
+ *  code.
+ */
 function mapError(err) {
-    console.error(err);
-    return err.errors ? { status: (ERROR_MAP[err.code] || BAD_REQUEST), code: err.code, message: err.message } : { status: NOT_FOUND, code: 'NOT_FOUND', message: err.toString() };
+  console.error(err);
+  return (typeof err === 'object' && err instanceof Array && err.length > 0) 
+    ? { status: (ERROR_MAP[err[0].code] || BAD_REQUEST),
+	errors: err.map(e =>
+			({ code: e.code, message: e.msg, widget: e.widget })),
+      }
+    : { status: SERVER_ERROR,
+	errors: [ { code: 'INTERNAL', message: err.toString() } ],
+      };
+} 
+
+/****************************** Utilities ******************************/
+
+/** Return original URL for req.  If index specified, then set it as
+ *  _index query param */
+function requestUrl(req, index) {
+  const port = req.app.locals.port;
+  let url = `${req.protocol}://${req.hostname}:${port}${req.originalUrl}`;
+  if (index !== undefined) {
+    if (url.match(/_index=\d+/)) {
+      url = url.replace(/_index=\d+/, `_index=${index}`);
+    }
+    else {
+      url += url.indexOf('?') < 0 ? '?' : '&';
+      url += `_index=${index}`;
+    }
+  }
+  return url;
 }
+  
