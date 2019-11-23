@@ -17,7 +17,7 @@
   {{#isSearch}}
 	    <label>
 	    <span class="label">
-	      {{#isRequired}}*{{/isRequired}}{{friendlyName}}:
+	      {{friendlyName}}:
 	    </span>
       {{#isSelect}}
       <select name="quantity" id="quantity" class="tst-quantity">
@@ -78,8 +78,8 @@
               <tr>
               {{#fields}}
               {{#value}}
-              <td>{{value}}</td>
-              {{/value}}
+                <td>{{value}}</td>
+              {{/value}}  
               {{/fields}}
               </tr>
               {{/users}}

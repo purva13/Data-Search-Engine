@@ -17,7 +17,7 @@
   {{#isSensorSearch}}
 	    <label>
 	    <span class="label">
-	    {{#isRequired1}}* {{/isRequired1}}{{friendlyName}}:
+	    {{friendlyName}}:
 	    </span>
       {{#isRequired1}}
 	    <input name="{{name}}" {{#type}}type="{{type}}"{{/type}}

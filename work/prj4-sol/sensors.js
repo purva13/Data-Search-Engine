@@ -1,10 +1,8 @@
 'use strict';
 
-const assert = require('assert');
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
-const querystring = require('querystring');
 
 const mustache = require('mustache');
 const widgetView = require('./widget-view');
@@ -13,7 +11,6 @@ const STATIC_DIR = 'statics';
 const TEMPLATES_DIR = 'templates';
 
 module.exports = serve;
-
 function serve(port, model, base='') {
   //@TODO
     const app = express();
@@ -81,7 +78,7 @@ const FIELDS_INFO = {
         isSensorType: true,
         isRequired: true,
         regex: /\d+/,
-        error: 'Minimun field must be a digit',
+        error: 'Minimum field must be a digit',
     },
     maximum: {
         friendlyName: 'Maximum',
@@ -104,7 +101,7 @@ const FIELDS_INFO = {
         isSensor: true,
         isSensorSearch: true,
         regex: /[a-zA-Z0-9_\\-]+/,
-        error: 'Model Number field can only contain alphabetics, -, or space',
+        error: "Model Number field can only contain alphabetics, -, ', or space",
     },
     period: {
         friendlyName: 'Period',
@@ -119,7 +116,7 @@ const FIELDS_INFO = {
         isRequired1: true,
         isSensor: true,
         regex: /\d+/,
-        error: 'Minimun field must be a digit',
+        error: 'Minimum field must be a digit',
     },
     sensorMax: {
         friendlyName: 'Expected Maximum',
@@ -144,7 +141,7 @@ function sensorTypeSearch(app) {
 function getAddSensorType(app){
     return async function(req, res) {
         const user = getNonEmptyValues(req.body);
-        let errors = validate(user, ['id']);
+        let errors = validate(user, ['id','modelNumber','manufacturer','quantity','minimum','maximum']);
             
         if(user.quantity==='flow'){
             user.unit='gpm';
@@ -158,7 +155,6 @@ function getAddSensorType(app){
         else{
             user.unit='C';
         }
-
         var min=user.minimum;
         var max=user.maximum;
         user.limits={min,max};
@@ -183,19 +179,17 @@ function getAddSensorType(app){
 
 function getSearchSensorTypeForm(app) {
     return async function(req, res) {
-      const isSubmit = req.query.submit !== undefined;
       let users = [];
       let errors = undefined;
       const search = getNonEmptyValues(req.query);
-        errors = validate(search);
-        if (Object.keys(search).length == 0) {
-      const msg = 'at least one search parameter must be specified';
-      errors = Object.assign(errors || {}, { _: msg });
+      errors = validate(search);
+      if (Object.keys(search).length == 0) {
+          const msg = 'at least one search parameter must be specified';
+          errors = Object.assign(errors || {}, { _: msg });
         }
-      const q = querystring.stringify(search);
-      try {
+       
+    try {
         users = await app.locals.model.list('sensor-types', search);
-        //console.log(users);
         let i = 0;
         while(i<users.data.length){
             users.data[i].minimum = users.data[i].limits.min;
@@ -205,16 +199,16 @@ function getSearchSensorTypeForm(app) {
       }
       catch (err) {
             console.error(err);
-        errors = wsErrors(err);
+            errors = wsErrors(err);
       }
       if (users.length === 0) {
         errors = {_: 'no users found for specified criteria; please retry'};
       }
       let model;
-        const fields_SensorType = users.data.map((u) => ({id: u.id, fields: fieldsWithValues(u)}));
+      const fields_SensorType = users.data.map((u) => ({id: u.id, fields: fieldsWithValues(u)}));       
         //let nextURL = '/tst-sensor-types-search.html?'+ users.next.split("?")[1];
         //let prevURL = '/tst-sensor-types-search.html?'+ users.previous.split("?")[1];
-        model = { base: app.locals.base, users: fields_SensorType, fields: FIELDS , next: '' , previous:''};
+        model = { base: app.locals.base, users: fields_SensorType, fields: FIELDS, next:'', previous:''};
       const html = doMustache(app, 'tst-sensor-types-search', model);
       res.send(html);
     };
@@ -231,7 +225,7 @@ function getSearchSensorTypeForm(app) {
 function getAddSensor(app){
     return async function(req, res) {
         const user = getNonEmptyValues(req.body);
-        let errors = validate(user, ['sensorID']);
+        let errors = validate(user, ['sensorID','model','period','sensorMin','sensorMax']);
         var min=user.sensorMin;
         var max=user.sensorMax;
 
@@ -303,6 +297,7 @@ function fieldsWithValues(values, errors={}) {
     return FIELDS.map(function (info) {
         const name = info.name;
         const extraInfo = { value: values[name] };
+        if(extraInfo.value === 0) extraInfo.value = "0";
         if (errors[name]) extraInfo.errorMessage = errors[name];
         return Object.assign(extraInfo, info);
     });
@@ -391,5 +386,3 @@ function setupTemplates(app) {
         }
     }
 }
-
-
