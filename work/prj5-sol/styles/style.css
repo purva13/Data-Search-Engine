@@ -5,7 +5,7 @@
   --color02: rgba(var(--base-color), 0.1);
   --color03: rgba(var(--base-color), 0.15);
   --color04: rgba(var(--base-color), 0.3);
-  --max-width: 600px;
+  --max-width: 800px;
 }
 
 body {

@@ -4,6 +4,11 @@
 
 const React = require('react');
 const ReactDom = require('react-dom');
+const FormComponent =  require('./form-component.jsx');
+const SensorTypesSearch = require('./sensor-types-search.jsx');
+const SensorTypesAdd = require('./sensor-types-add.jsx');
+const SensorsSearch = require('./sensors-search.jsx');
+const SensorsAdd = require('./sensors-add.jsx');
 
 const Tab = require('./tab.jsx');
 
@@ -25,7 +30,11 @@ class App extends React.Component {
     this.isSelected = this.isSelected.bind(this);
 
     this.state = {
-      selected: 'sensor-types-search'
+      selected: 'sensor-types-search',
+      'sensor-types-search': <SensorTypesSearch ws={props.ws} app={this}/>,
+      'sensor-types-add': <SensorTypesAdd ws={props.ws} app={this}/>,
+      'sensors-search': <SensorsSearch ws={props.ws} app={this}/>,
+      'sensors-add': <SensorsAdd ws={props.ws} app={this}/>,
     };
 
   }
@@ -43,6 +52,24 @@ class App extends React.Component {
   getComponent(v) {
     let component = null;
     //@TODO
+    const rand=Math.random();
+    switch(v){
+      case 'sensor-types-search':
+        component=<SensorTypesSearch ws={this.props.ws} app={this} key={rand}/>;
+        break; 
+    
+      case 'sensor-types-add':
+          component=<SensorTypesAdd ws={this.props.ws} app={this} key={rand}/>;
+          break;
+
+      case 'sensors-search':
+          component=<SensorsSearch ws={this.props.ws} app={this} key={rand}/>;
+          break;
+
+      case 'sensors-add':
+          component=<SensorsAdd ws={this.props.ws} app={this} key={rand}/>;
+          break;
+    }
     return component;
   }
 
