@@ -1,6 +1,6 @@
 const React = require('react');
 
-const {FIELD_INFOS, fieldInfos} = require('../lib/sensor-type-add');
+const {FIELD_INFOS, fieldInfos} = require('../sensor-type-add');
 const FormComponent = require('./form-component.jsx');
 
 class  SensorTypesAdd extends React.Component {

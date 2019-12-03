@@ -99,9 +99,10 @@ class FormComponent extends React.Component {
         return (
           <div className="field" key={i}>
             <label className="field-name">{label}</label>
-            <select>
+            <select name={f} type={type} value={value} onChange={this.onChange} onBlur={this.onBlur}>
+            <option>Select</option>
               <option value="temperature">Temperature</option>
-              <option value="quantity">Quantity</option>
+              <option value="humidity">Humidity</option>
               <option value="flow">Flow</option>
               <option value="pressure">Pressure</option>
             </select>

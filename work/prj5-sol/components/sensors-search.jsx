@@ -1,6 +1,6 @@
 const React = require('react');
 
-const {FIELD_INFOS, fieldInfos} = require('../lib/sensors-search');
+const {FIELD_INFOS, fieldInfos} = require('../sensors-search');
 const FormComponent = require('./form-component.jsx');
 
 class SensorsSearch extends React.Component {
@@ -11,7 +11,6 @@ class SensorsSearch extends React.Component {
         type: 'submit',
         value: 'Search',
       },
-
     };
     const infos  = fieldInfos(Object.keys(FIELD_INFOS), extraInfos);
     this.info = infos;
@@ -26,14 +25,24 @@ class SensorsSearch extends React.Component {
 
   async onSubmit(form) {
     try {
+        if(Object.values(form.values()).length === 0){
+          const msg = 'Please enter one or more fields';
+          form.setFormErrors([msg]);
+        }
         form.values().id = form.values().sensorID;
         delete form.values().sensorID;
         const sensor = await this.props.ws.list('sensors',form.values());
         this.setState({result:sensor});
     }
     catch (err) {
-      const msg = (err.message) ? err.message : 'web service error';
-      form.setFormErrors([msg]);
+      if(err.status === 404){
+        const msg = 'No such entries found';
+        form.setFormErrors([msg]);
+      }
+      else {
+        const msg = (err.message) ? err.message : 'web service error';
+        form.setFormErrors([msg]);
+      }
     }
   }
 
